@@ -4,9 +4,9 @@ import { trpc } from "../utils/trpc";
 import { signIn, signOut, useSession } from "next-auth/react";
 import styles from "./index.module.css";
 import { atom, useAtom } from "jotai";
-
-import { HexAlphaColorPicker, HexColorInput, HexColorPicker } from "react-colorful";
-import { useEffect, useState } from "react";
+import ColorPicker from "../components/ColorPicker";
+import { styled } from "@stitches/react";
+import { useState } from "react";
 
 const Home: NextPage = () => {
 	const { data } = trpc.example.hello.useQuery({ text: "from tRPC" });
@@ -37,6 +37,7 @@ const Home: NextPage = () => {
 export default Home;
 
 const AuthShowcase: React.FC = () => {
+	const [backgroundColor, setBackgroundColor] = useState("");
 	const { data: secretMessage } = trpc.auth.getSecretMessage.useQuery();
 
 	const { data: sessionData } = useSession();
@@ -51,63 +52,25 @@ const AuthShowcase: React.FC = () => {
 			>
 				{sessionData ? "Sign out" : "Sign in"}
 			</button>
-			<TechnologyCard />
+			{sessionData && (
+				<>
+					<ColorPicker
+						showHexInputField
+						onSelectColor={(color) => setBackgroundColor(color.toLocaleUpperCase())}
+					/>
+					<ChosenColor css={{ backgroundColor: backgroundColor }} />
+				</>
+			)}
 		</div>
 	);
 };
 
-const TechnologyCard = () => {
-	const [color, setColor] = useState("#FFFFFF");
-	const [opacityPercentage, setOpacityPercentage] = useState(100);
-
-	useEffect(() => {
-		let hexWithoutPond = color.replace(/#/g, "");
-		if (hexWithoutPond.length === 8) {
-			let y = hexWithoutPond[6] as string;
-			let z = hexWithoutPond[7] as string;
-			let q = y.concat(z);
-
-			let x = parseInt(q, 16);
-			let max = 255;
-
-			setOpacityPercentage(Math.floor(Math.round((x / max) * 100)));
-		} else {
-			setOpacityPercentage(100);
-		}
-	}, [color]);
-
-	const fixThreeDigitEntry = (value: string) => {
-		let hexWithoutPond = value.replace(/#/g, "");
-
-		if (hexWithoutPond.length === 3 || hexWithoutPond.length === 4) {
-			hexWithoutPond = hexWithoutPond
-				.split("")
-				.map(function (hex) {
-					return hex + hex;
-				})
-				.join("");
-		}
-
-		setColor(`#${hexWithoutPond}`);
-	};
-
-	const onColorInputChange = (value: string) => {
-		setColor(value);
-	};
-
-	return (
-		<section className={styles.card} style={{ backgroundColor: `${color}` }}>
-			<HexAlphaColorPicker color={color} onChange={setColor} />
-			<HexColorInput
-				color={color}
-				onChange={onColorInputChange}
-				onBlur={() => fixThreeDigitEntry(color)}
-				placeholder="Type a color"
-				prefixed
-				alpha
-			/>
-			<div>{color}</div>
-			<div>{opacityPercentage}%</div>
-		</section>
-	);
-};
+const ChosenColor = styled("div", {
+	height: "25px",
+	width: "25px",
+	borderRadius: "50%",
+	display: "inline-block",
+	"&:hover": {
+		backgroundColor: "lightgray",
+	},
+});
